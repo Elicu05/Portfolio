@@ -1,0 +1,7 @@
+{
+  "$schema": "https://jsrepo.dev/schema.json",
+  "repos": [],
+  "paths": {
+    "*": "src/components"
+  }
+}
