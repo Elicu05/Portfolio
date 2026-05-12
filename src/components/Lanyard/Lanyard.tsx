@@ -1,4 +1,5 @@
 /* eslint-disable react/no-unknown-property */
+import type { RefObject } from 'react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, extend, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei';
@@ -22,6 +23,21 @@ import './Lanyard.css';
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
+/** Ensures camera x/y/z + fov track props (Canvas `camera` alone can miss non-z updates). */
+function SyncCameraFromProps({ position, fov }: { position: [number, number, number]; fov: number }) {
+  const camera = useThree((s) => s.camera);
+  useLayoutEffect(() => {
+    camera.position.set(position[0], position[1], position[2]);
+    const pCam = camera as THREE.PerspectiveCamera;
+    if (pCam.isPerspectiveCamera) {
+      pCam.fov = fov;
+      pCam.updateProjectionMatrix();
+    }
+    camera.updateMatrixWorld();
+  }, [camera, position[0], position[1], position[2], fov]);
+  return null;
+}
+
 /** Card substrate behind decal — design file matte #292929 */
 export const CARD_SUBSTRATE_HEX = '#292929';
 
@@ -31,6 +47,8 @@ export const CARD_SUBSTRATE_HEX = '#292929';
  */
 export const LANYARD_VIEWPORT_WH_NUM = 358209;
 export const LANYARD_VIEWPORT_WH_DEN = 500000;
+
+const DEFAULT_RIG_POSITION: [number, number, number] = [0, 0, 0];
 
 interface LanyardProps {
   position?: [number, number, number];
@@ -48,6 +66,13 @@ interface LanyardProps {
    * Does not resize the DOM or the About grid — only the 3D framing. Typical ~1.2–1.45 for a bolder card.
    */
   subjectZoom?: number;
+  /**
+   * Listen for pointers on this element instead of blocking the fullscreen canvas overlay.
+   * Raycasting uses the WebGL canvas bounds + client coords so the badge can overlap HTML underneath.
+   */
+  eventSource?: RefObject<HTMLElement>;
+  /** World-space offset for rope + badge + lanyard line (easiest way to shift X/Y vs the camera). */
+  rigPosition?: [number, number, number];
 }
 
 export default function Lanyard({
@@ -56,20 +81,23 @@ export default function Lanyard({
   fov = 20,
   transparent = true,
   sceneBackground,
-  subjectZoom = 1
+  subjectZoom = 1,
+  eventSource,
+  rigPosition = DEFAULT_RIG_POSITION
 }: LanyardProps) {
   const [isMobile, setIsMobile] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
 
   const useSceneFill = typeof sceneBackground === 'string' && sceneBackground.trim() !== '';
   const glTransparent = useSceneFill ? false : transparent;
 
+  // Depends on xyz scalars, not `position` by reference, so edits to x/y/z (including same-array mutation) refresh the camera.
   const cameraConfig = useMemo(() => {
     const zoom = Math.max(0.75, Math.min(subjectZoom, 2.75));
     return {
       position: [position[0], position[1], position[2] / zoom] as [number, number, number],
       fov,
     };
-  }, [position, fov, subjectZoom]);
+  }, [position[0], position[1], position[2], fov, subjectZoom]);
 
   useEffect(() => {
     const handleResize = (): void => setIsMobile(window.innerWidth < 768);
@@ -82,13 +110,15 @@ export default function Lanyard({
       <Canvas
         camera={cameraConfig}
         dpr={[2, isMobile ? 3.25 : 4]}
+        {...(eventSource ? { eventSource } : {})}
         gl={{
           alpha: glTransparent,
           antialias: true,
           powerPreference: 'high-performance',
           stencil: false,
         }}
-        onCreated={({ gl }) => {
+        onCreated={(state) => {
+          const { gl, setEvents } = state;
           gl.outputColorSpace = THREE.SRGBColorSpace;
           gl.toneMapping = THREE.NoToneMapping;
           gl.toneMappingExposure = 1;
@@ -99,12 +129,26 @@ export default function Lanyard({
           } else {
             gl.setClearColor(new THREE.Color(0x000000), 1);
           }
+          if (eventSource) {
+            setEvents({
+              compute: (event, st) => {
+                const r = gl.domElement.getBoundingClientRect();
+                if (r.width <= 0 || r.height <= 0) return;
+                st.pointer.set(
+                  ((event.clientX - r.left) / r.width) * 2 - 1,
+                  -((event.clientY - r.top) / r.height) * 2 + 1
+                );
+                st.raycaster.setFromCamera(st.pointer, st.camera);
+              }
+            });
+          }
         }}
       >
+        <SyncCameraFromProps position={cameraConfig.position} fov={cameraConfig.fov} />
         {useSceneFill ? <color attach="background" args={[sceneBackground!.trim()]} /> : null}
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-          <Band isMobile={isMobile} />
+          <Band isMobile={isMobile} rigPosition={rigPosition} />
         </Physics>
         <Environment blur={0.75} environmentIntensity={0.55}>
           <Lightformer
@@ -145,9 +189,10 @@ interface BandProps {
   maxSpeed?: number;
   minSpeed?: number;
   isMobile?: boolean;
+  rigPosition?: [number, number, number];
 }
 
-function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
+function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = DEFAULT_RIG_POSITION }: BandProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const band = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -303,57 +348,67 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
 
   curve.curveType = 'chordal';
 
+  const { width: canvasW, height: canvasH } = useThree((s) => s.size);
+
   return (
     <>
-      <group position={[0, 4, 0]}>
-        <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
-        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
-          <BallCollider args={[0.1]} />
-        </RigidBody>
-        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
-          <BallCollider args={[0.1]} />
-        </RigidBody>
-        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
-          <BallCollider args={[0.1]} />
-        </RigidBody>
-        <RigidBody
-          position={[2, 0, 0]}
-          ref={card}
-          {...segmentProps}
-          type={dragged ? ('kinematicPosition' as RigidBodyProps['type']) : ('dynamic' as RigidBodyProps['type'])}
-        >
-          <CuboidCollider args={[0.8, 1.125, 0.01]} />
-          <group
-            scale={2.25}
-            position={[0, -1.2, -0.05]}
-            onPointerOver={() => hover(true)}
-            onPointerOut={() => hover(false)}
-            onPointerUp={(e) => {
-              (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-              drag(false);
-            }}
-            onPointerDown={(e) => {
-              (e.target as HTMLElement).setPointerCapture(e.pointerId);
-              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
-            }}
+      <group position={rigPosition}>
+        <group position={[0, 4, 0]}>
+          <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
+          <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+            <BallCollider args={[0.1]} />
+          </RigidBody>
+          <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+            <BallCollider args={[0.1]} />
+          </RigidBody>
+          <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+            <BallCollider args={[0.1]} />
+          </RigidBody>
+          <RigidBody
+            position={[2, 0, 0]}
+            ref={card}
+            {...segmentProps}
+            type={dragged ? ('kinematicPosition' as RigidBodyProps['type']) : ('dynamic' as RigidBodyProps['type'])}
           >
-            <mesh geometry={nodes.card.geometry} material={cardBackMaterial} position={[0, 0, -0.016]} renderOrder={-1} />
-            <mesh geometry={nodes.card.geometry} material={cardSurfaceMaterial} />
-            <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
-            <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
-          </group>
-        </RigidBody>
+            <CuboidCollider args={[0.8, 1.125, 0.01]} />
+            <group
+              scale={2.25}
+              position={[0, -1.2, -0.05]}
+              onPointerOver={() => hover(true)}
+              onPointerOut={() => hover(false)}
+              onPointerUp={(e) => {
+                (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+                drag(false);
+              }}
+              onPointerDown={(e) => {
+                (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
+              }}
+            >
+              <mesh geometry={nodes.card.geometry} material={cardBackMaterial} position={[0, 0, -0.016]} renderOrder={-1} />
+              <mesh geometry={nodes.card.geometry} material={cardSurfaceMaterial} />
+              <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
+              <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
+            </group>
+          </RigidBody>
+        </group>
       </group>
+      {/*
+        Band stays OUTSIDE rigPosition: curve points come from Rapier in world coords.
+        Nesting mesh under rigPosition doubled the transform and hid/off-screened the strap.
+      */}
       <mesh ref={band}>
         <meshLineGeometry />
         <meshLineMaterial
-          color="white"
+          color="#c9d4e8"
           depthTest={false}
-          resolution={isMobile ? [2200, 2200] : [3200, 3200]}
+          transparent
+          opacity={1}
+          resolution={[canvasW || 512, canvasH || 512]}
           useMap
           map={texture}
           repeat={[-4, 1]}
-          lineWidth={1}
+          lineWidth={Math.max(isMobile ? 2.75 : 2.25, 1.75)}
         />
       </mesh>
     </>

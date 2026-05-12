@@ -83,17 +83,8 @@ export default function Projects() {
   return (
     <section className="projects-section" id="projects">
       <div className="section-container">
-        <ScrollFloat containerClassName="section-title-wrap" textClassName="section-title">
-          Projects
-        </ScrollFloat>
+        
 
-        <AnimatedContent distance={40} duration={0.8}>
-          <div className="project-categories">
-            {categories.map((cat, i) => (
-              <span className={`category-pill ${i === 0 ? 'active' : ''}`} key={i}>{cat}</span>
-            ))}
-          </div>
-        </AnimatedContent>
 
         <div className="projects-grid">
           {projects.map((project, i) => (
@@ -109,17 +100,6 @@ export default function Projects() {
                   <span className="project-category" style={{ color: project.accent }}>
                     {project.category}
                   </span>
-                  <h3 className="project-title">
-                    <DecryptedText
-                      text={project.title}
-                      animateOn="view"
-                      speed={30}
-                      maxIterations={8}
-                      sequential={true}
-                      revealDirection="start"
-                      className="project-title-char"
-                    />
-                  </h3>
                   <p className="project-desc">{project.description}</p>
                   <div className="project-footer">
                     <span className="project-link">

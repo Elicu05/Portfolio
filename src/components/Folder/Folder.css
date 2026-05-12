@@ -1,7 +1,8 @@
 .folder {
-  /* Closed shell; gradient starts at --folder-front-open for continuity when flaps open. */
-  --folder-surface: linear-gradient(90deg, #5b96fe 0%, #2fc9ff 100%), #d9d9d9;
-  --folder-front-open: #5b96fe;
+  /* Reference colors */
+  --folder-surface: #2FC9FF;
+  --folder-tab: #14C1FE;
+  --folder-front-open: #2FC9FF;
   transition: all 0.2s ease-in;
   cursor: pointer;
 }
@@ -85,7 +86,7 @@
   content: '';
   width: 30px;
   height: 10px;
-  background: var(--folder-surface);
+  background: var(--folder-tab);
   border-radius: 5px 5px 0 0;
   transition: background 0.3s ease;
 }

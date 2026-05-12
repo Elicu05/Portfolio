@@ -1,7 +1,5 @@
 import AnimatedContent from '../components/AnimatedContent/AnimatedContent';
 import BlurText from '../components/BlurText/BlurText';
-import GradientText from '../components/GradientText/GradientText';
-import Magnet from '../components/Magnet/Magnet';
 
 export default function Contact() {
   return (
@@ -30,19 +28,6 @@ export default function Contact() {
               creative visions to life. Whether it's a full design system,
               an e-commerce redesign, or a fresh brand identity — let's talk.
             </p>
-
-            <div className="contact-ctas">
-              <Magnet padding={100} magnetStrength={3}>
-                <a href="mailto:Elipinkboy@gmail.com" className="btn-primary btn-large">
-                  <GradientText colors={['#ffffff', '#dbeafe', '#ffffff']} animationSpeed={4}>
-                    Send A Message
-                  </GradientText>
-                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
-              </Magnet>
-            </div>
 
             <div className="contact-links">
               <a href="https://behance.net/elicubillos" target="_blank" rel="noopener noreferrer" className="contact-link">

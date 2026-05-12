@@ -49,7 +49,6 @@ export default function Hero() {
         </div>
 
         <div className="hero-role">
-          <span className="hero-role-prefix">Mid</span>
           <RotatingText
             texts={['UI/UX Designer', 'UX Researcher', 'Design Systems', 'E-commerce Architect']}
             rotationInterval={2500}

@@ -377,23 +377,56 @@
 .about-section {
   max-width: 1314px;
   margin: 0 auto;
-  padding: 100px 40px;
+  padding: clamp(16px, 3.5vw, 48px) clamp(14px, 3.25vw, 32px);
   position: relative;
   background: transparent;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .about-grid {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  /* First track must fit .lanyard-container; 480px in a 280px column overflowed and covered center text */
-  grid-template-columns: minmax(0, 460px) 1fr minmax(260px, 320px);
-  gap: 0 60px;
+  /* Reference: ~25% lanyard / ~40% story / ~35% sidebar */
+  grid-template-columns: minmax(208px, 0.92fr) minmax(268px, 1.52fr) minmax(220px, 1.26fr);
+  gap: clamp(12px, 1.6vw, 22px) clamp(18px, 2.8vw, 40px);
   align-items: start;
+  align-content: start;
+  width: 100%;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
   border-radius: 28px;
-  padding: 48px 48px 56px;
+  padding: clamp(20px, 3vw, 36px) clamp(20px, 3.25vw, 40px);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.04);
-  height: 693px;
+}
+
+/* Canvas covers the frosted grid; headings/columns paint underneath with pointer-events */
+.about-col-lanyard,
+.about-col-center,
+.about-col-right {
+  position: relative;
+  z-index: 1;
+}
+
+.about-lanyard-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border-radius: inherit;
+}
+
+.about-lanyard-overlay,
+.about-lanyard-overlay * {
+  pointer-events: none;
+}
+
+.about-lanyard-overlay > .lanyard-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 /* ── Left Column — Lanyard ── */
@@ -401,40 +434,50 @@
 .about-col-lanyard {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 32px;
+  align-items: flex-start;
+  gap: 0;
   min-width: 0;
+  --lc-h: min(520px, 68vh);
 }
 
-.lanyard-container {
-  box-sizing: border-box;
-  margin-inline: auto;
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-  /*
-    Drive size from HEIGHT, derive WIDTH — avoid width:100% + aspect-ratio + max-height fighting
-    (clamped height without matching width skews the measured canvas rect → stretch).
-    Ratio 358209/500000 = card mesh ΔX/ΔY in exported GLB.
-  */
-  --lc-h: min(620px, 82vh);
-  height: var(--lc-h);
+/* Reserves footprint for overlay; centered in narrow column while contact stays reference-left */
+.lanyard-layout-spacer {
+  flex-shrink: 0;
+  align-self: center;
   width: min(460px, 100%, calc(var(--lc-h) * 358209 / 500000));
+  height: var(--lc-h);
+}
+
+/* AnimatedContent wrapper is the flex item after the spacer — margin must live here */
+.about-contact-slot {
+  align-self: stretch;
+  width: 100%;
+  max-width: min(460px, 100%);
+  margin-top: clamp(-72px, -11vh, -36px);
 }
 
 .about-contact {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding-top: 0px;
+  gap: clamp(8px, 1.25vw, 12px);
+  padding-top: 0;
+  width: 100%;
+  max-width: min(460px, 100%);
+  align-self: flex-start;
 }
 
 .contact-line {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.85rem;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.8125rem;
   color: rgba(27, 28, 29, 1);
+  max-width: 100%;
+}
+
+.contact-line span,
+.contact-line a {
+  overflow-wrap: anywhere;
 }
 
 .contact-line svg {
@@ -455,42 +498,41 @@
 .about-col-center {
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  margin-top: -34px;
-  margin-bottom: -34px;
+  gap: clamp(12px, 1.75vw, 18px);
+  min-width: 0;
+}
+
+/* Extra space after bio, before Experience (in addition to column gap) */
+.about-slot-experience {
+  margin-top: clamp(12px, 2vw, 24px);
 }
 
 .about-title {
   font-family: 'Lufga', var(--font-display);
-  font-size: 80px;
+  font-size: clamp(2.125rem, 3.85vw + 0.85rem, 4.375rem);
   font-style: normal;
   font-weight: 500;
-  line-height: normal;
-  letter-spacing: -3.6px;
+  line-height: 1.04;
+  letter-spacing: clamp(-3.2px, -0.05em, -1.8px);
   background: linear-gradient(90deg, #8B5CFA 0%, #5B96FE 50%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-top: 12px;
-  margin-bottom: 12px;
-  padding-top: 0;
-  padding-bottom: 0;
+  margin: 0;
 }
 
 .about-bio {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: -21px;
-  margin-bottom: -21px;
+  gap: clamp(8px, 1.35vw, 11px);
 }
 
 .about-bio p {
-  font-size: 0.92rem;
+  font-size: 0.8675rem;
   color: rgba(27, 28, 29, 1);
-  letter-spacing: -0.5px;
-  line-height: 1.55;
-  text-align: justify;
+  letter-spacing: -0.35px;
+  line-height: 1.52;
+  text-align: start;
   font-weight: 300;
 }
 
@@ -503,63 +545,66 @@
 
 .about-pill-heading {
   font-family: 'Lufga', var(--font-display);
-  font-size: 23.637px;
+  font-size: clamp(0.95rem, 0.35vw + 0.85rem, 1.28rem);
   font-style: normal;
   font-weight: 400;
-  line-height: normal;
-  letter-spacing: -1.064px;
+  line-height: 1.2;
+  letter-spacing: -0.55px;
   background: linear-gradient(90deg, #8B5CFA 0%, #5B96FE 50%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   border: 1.5px solid var(--blue-200);
   border-radius: 100px;
-  padding: 6px 24px;
+  padding: 5px 18px;
   display: inline-block;
-  margin-bottom: 16px;
+  margin: 0 0 12px;
 }
 
-/* ── Experience ── */
+/* ── Experience (no panel — text only, reference layout) ── */
 
 .about-experience {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 3px 0;
+  gap: 6px;
+  padding: 0;
 }
 
 .exp-role-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   color: var(--slate-900);
+  line-height: 1.35;
 }
 
 .exp-bullets {
   list-style: none;
   padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .exp-bullets li {
   position: relative;
-  padding-left: 20px;
-  font-size: 0.88rem;
+  padding-left: 14px;
+  font-size: 0.8125rem;
   color: rgba(27, 28, 29, 1);
   font-weight: 300;
-  letter-spacing: -0.2px;
-  line-height: 1.65;
+  letter-spacing: -0.15px;
+  line-height: 1.52;
 }
 
 .exp-bullets li::before {
-  content: '✦';
+  content: '•';
   position: absolute;
   left: 0;
   top: 0;
   color: var(--blue-500);
-  font-size: 0.7rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 
 /* ── Right Column — Education, Fields, Softwares ── */
@@ -567,15 +612,22 @@
 .about-col-right {
   display: flex;
   flex-direction: column;
-  gap: 34px;
+  gap: clamp(12px, 1.75vw, 18px);
+  min-width: 0;
+}
+
+/* Extra space between Education — Creative fields — Softwares (flex gap + margin) */
+.about-slot-right-spaced {
+  margin-top: clamp(12px, 2vw, 24px);
 }
 
 .about-dots {
   display: flex;
-  gap: 8px;
+  gap: 7px;
   justify-content: flex-end;
-  margin-right: -18px;
-  margin-top: -16px;
+  align-self: flex-end;
+  width: 100%;
+  margin: 0 0 2px;
 }
 
 .about-dot {
@@ -588,13 +640,14 @@
 .about-education {
   display: flex;
   flex-direction: column;
+  gap: 0;
 }
 
 .edu-entry {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  margin-bottom: 20px;
+  gap: 2px;
+  margin-bottom: 12px;
 }
 
 .edu-entry:last-child {
@@ -604,22 +657,24 @@
 .edu-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.5px;
+  font-size: 0.9rem;
+  letter-spacing: -0.4px;
   color: var(--slate-900);
+  line-height: 1.35;
 }
 
 .edu-meta {
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   color: var(--slate-400);
+  line-height: 1.4;
 }
 
 .edu-detail {
-  font-size: 14px;
+  font-size: 0.8125rem;
   color: rgba(27, 28, 29, 1);
   font-weight: 300;
-  letter-spacing: -0.2px;
-  line-height: 1.5;
+  letter-spacing: -0.15px;
+  line-height: 1.45;
 }
 
 /* ── Creative Fields ── */
@@ -627,33 +682,31 @@
 .about-fields {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .fields-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px 10px;
 }
 
 .field-item {
-  font-size: 0.85rem;
+  font-size: 0.7975rem;
   color: rgba(27, 28, 29, 1);
   font-weight: 300;
-  letter-spacing: -0.2px;
-  white-space: nowrap;
+  letter-spacing: -0.12px;
+  overflow-wrap: break-word;
+  line-height: 1.45;
 }
 
 /* ── Software Card with Gradient Border ── */
 
 .softwares-card {
   position: relative;
-  padding: 8px 24px 41px;
-  border-radius: 20px;
+  padding: 12px 18px 16px;
+  border-radius: 18px;
   background: transparent;
-  height: 110px;
-  margin-top: -7px;
-  margin-bottom: -7px;
 }
 
 .softwares-card::before {
@@ -673,7 +726,7 @@
 
 .softwares-card .about-pill-heading {
   margin-top: 0;
-  margin-bottom: 13px;
+  margin-bottom: 12px;
 }
 
 /* ── Software Badges ── */
@@ -683,7 +736,6 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  height: 34px;
 }
 
 .sw-badge {
@@ -890,17 +942,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 32px;
-  padding: 64px 0;
+  gap: 60px;
+  padding: 200px 0;
   background: transparent;
   user-select: none;
 }
 
 .featured-banner-text {
   font-family: "Lufga", sans-serif;
-  font-size: 87.675px;
+  font-size: 67.675px;
   font-style: normal;
-  font-weight: 900;
+  font-weight: 700;
   line-height: normal;
   letter-spacing: 0;
   background: linear-gradient(90deg, #8b5cfa 0%, #5b96fe 50%);
@@ -1181,12 +1233,12 @@
 
 @media (max-width: 1024px) {
   .about-grid {
-    grid-template-columns: minmax(0, min(400px, 100%)) 1fr;
-    gap: 0 40px;
+    grid-template-columns: minmax(0, min(360px, 100%)) minmax(0, 1fr);
+    gap: clamp(14px, 2.5vw, 22px) clamp(18px, 3vw, 32px);
   }
   .about-col-right {
     grid-column: 1 / -1;
-    margin-top: 40px;
+    margin-top: 8px;
   }
   .about-fields .fields-row {
     grid-template-columns: 1fr;
@@ -1194,19 +1246,29 @@
 }
 
 @media (max-width: 900px) {
+  .about-section {
+    min-height: unset;
+    display: block;
+    padding: clamp(20px, 5vw, 40px) clamp(14px, 4vw, 28px);
+  }
+
   .about-grid {
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 24px;
   }
   .about-col-lanyard {
     order: -1;
+    --lc-h: min(320px, 42vh);
   }
-  .lanyard-container {
-    --lc-h: 350px;
-    height: var(--lc-h);
+  .lanyard-layout-spacer {
     width: min(100%, calc(var(--lc-h) * 358209 / 500000));
     max-width: 100%;
     margin-inline: auto;
+  }
+
+  .about-contact-slot {
+    margin-top: clamp(-32px, -7vh, -14px);
+    max-width: 100%;
   }
 
   .featured-banner {

@@ -1,3 +1,4 @@
+import { useRef, type RefObject } from 'react';
 import AnimatedContent from '../components/AnimatedContent/AnimatedContent';
 import Lanyard from '../components/Lanyard/Lanyard';
 
@@ -15,17 +16,34 @@ const softwares = [
   { name: 'VS Code', abbr: 'Vs', bg: '#007acc' }
 ];
 
+/** Camera & placement for the About lanyard — edit values here. */
+const ABOUT_LANYARD_CAMERA = {
+  /**
+   * Perspective camera [x, y, z] in scene units. Shifts what you see (left/right/up/down + distance).
+   * With fov 20, try steps of ~0.5–2 for visible X/Y pan; z is also scaled by subjectZoom.
+   */
+  position: [0, 0, 28] as [number, number, number],
+  /** Larger = badge fills more of the overlay (~1.2–2). */
+  subjectZoom: 1.55,
+  /**
+   * Moves rope + badge + strap together in world space — most obvious control for sliding the card on screen.
+   * +x → right, +y → up (Three.js coords).
+   */
+  rigPosition: [-4.9, 0.5, 0] as [number, number, number],
+};
+
 export default function About() {
+  const aboutGridRef = useRef<HTMLDivElement>(null);
+
   return (
     <section className="about-section" id="about">
-      <div className="about-grid">
+      {/* Resume grid (~25/40/35): spacing in App.css · lanyard: ABOUT_LANYARD_CAMERA */}
+      <div className="about-grid" ref={aboutGridRef}>
         {/* Left column — Lanyard card */}
         <div className="about-col-lanyard">
-            <div className="lanyard-container">
-              <Lanyard subjectZoom={1.34} />
-            </div>
+          <div className="lanyard-layout-spacer" aria-hidden />
 
-          <AnimatedContent distance={40} duration={0.8} delay={0.4}>
+          <AnimatedContent className="about-contact-slot" distance={40} duration={0.8} delay={0.4}>
             <div className="about-contact">
               <div className="contact-line">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue-600)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -79,7 +97,7 @@ export default function About() {
             </div>
           </AnimatedContent>
 
-          <AnimatedContent distance={40} duration={0.8} delay={0.25} style={{ marginTop: 12, marginBottom: 12 }}>
+          <AnimatedContent className="about-slot-experience" distance={40} duration={0.8} delay={0.25}>
             <h3 className="about-pill-heading">Experience</h3>
             <div className="about-experience">
               <span className="exp-role-title">Mid UI/UX Designer (2021 – Present)</span>
@@ -102,7 +120,7 @@ export default function About() {
             </div>
           </AnimatedContent>
 
-          <AnimatedContent distance={40} duration={0.8} delay={0.2} style={{ marginTop: 7, marginBottom: 7 }}>
+          <AnimatedContent distance={40} duration={0.8} delay={0.2}>
             <h3 className="about-pill-heading">Education</h3>
             <div className="about-education">
               <div className="edu-entry">
@@ -119,12 +137,7 @@ export default function About() {
             </div>
           </AnimatedContent>
 
-          <AnimatedContent
-            distance={40}
-            duration={0.8}
-            delay={0.3}
-            style={{ marginTop: -7, marginBottom: -7 }}
-          >
+          <AnimatedContent className="about-slot-right-spaced" distance={40} duration={0.8} delay={0.3}>
             <h3 className="about-pill-heading">Creative fields</h3>
             <div className="about-fields">
               {skills.map((pair, i) => (
@@ -136,7 +149,7 @@ export default function About() {
             </div>
           </AnimatedContent>
 
-          <AnimatedContent distance={40} duration={0.8} delay={0.35}>
+          <AnimatedContent className="about-slot-right-spaced" distance={40} duration={0.8} delay={0.35}>
             <div className="softwares-card">
               <h3 className="about-pill-heading">Softwares</h3>
               <div className="software-badges">
@@ -148,6 +161,16 @@ export default function About() {
               </div>
             </div>
           </AnimatedContent>
+        </div>
+
+        {/* Full-grid WebGL overlay — rope + badge can drift over neighbouring columns */}
+        <div className="about-lanyard-overlay">
+          <Lanyard
+            position={ABOUT_LANYARD_CAMERA.position}
+            subjectZoom={ABOUT_LANYARD_CAMERA.subjectZoom}
+            rigPosition={ABOUT_LANYARD_CAMERA.rigPosition}
+            eventSource={aboutGridRef as RefObject<HTMLElement>}
+          />
         </div>
       </div>
     </section>

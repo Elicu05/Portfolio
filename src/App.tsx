@@ -19,12 +19,12 @@ function App() {
         proximity={250}
         className="dot-grid-bg"
       />
-      <ClickSpark sparkColor="#3b82f6" sparkSize={12} sparkRadius={20} sparkCount={10} duration={500}>
+      <ClickSpark sparkColor="#14C1FE" sparkSize={12} sparkRadius={20} sparkCount={10} duration={500}>
         <Hero />
         <About />
         <div className="featured-banner">
-          <span className="featured-banner-text">Featured</span>
-          <Folder size={1.2} />
+          <span className="featured-banner-text">Featured         </span>
+          <Folder size={2} />
           <span className="featured-banner-text">projects</span>
         </div>
         <Projects />
