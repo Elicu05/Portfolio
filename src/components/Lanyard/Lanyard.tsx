@@ -23,16 +23,9 @@ import './Lanyard.css';
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
-declare module '@react-three/fiber' {
-  interface ThreeElements {
-    meshLineGeometry: any;
-    meshLineMaterial: any;
-  }
-}
-
 /** Ensures camera x/y/z + fov track props (Canvas `camera` alone can miss non-z updates). */
 function SyncCameraFromProps({ position, fov }: { position: [number, number, number]; fov: number }) {
-  const camera = useThree((s) => s.camera);
+  const camera = useThree((s: any) => s.camera);
   useLayoutEffect(() => {
     camera.position.set(position[0], position[1], position[2]);
     const pCam = camera as THREE.PerspectiveCamera;
@@ -99,7 +92,7 @@ export default function Lanyard({
           powerPreference: 'high-performance',
           stencil: false,
         }}
-        onCreated={(state) => {
+        onCreated={(state: any) => {
           const { gl, setEvents } = state;
           gl.outputColorSpace = THREE.SRGBColorSpace;
           gl.toneMapping = THREE.NoToneMapping;
@@ -113,7 +106,7 @@ export default function Lanyard({
           }
           if (eventSource) {
             setEvents({
-              compute: (event, st) => {
+              compute: (event: any, st: any) => {
                 const r = gl.domElement.getBoundingClientRect();
                 if (r.width <= 0 || r.height <= 0) return;
                 st.pointer.set(
@@ -208,7 +201,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = [0,
     }
   }, [hovered, dragged]);
 
-  useFrame((state, delta) => {
+  useFrame((state: any, delta: number) => {
     if (dragged && typeof dragged !== 'boolean') {
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
       dir.copy(vec).sub(state.camera.position).normalize();
@@ -221,7 +214,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = [0,
       });
     }
     if (fixed.current) {
-      // Fix for buggy rope: consistent lerping and delta clamping
       [j1, j2, j3].forEach(ref => {
         if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
         const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
@@ -249,7 +241,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = [0,
       <group position={rigPosition}>
         <group position={[0, 4, 0]}>
           <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
-          {/* Vertical initialization to fix gravity snaps */}
           <RigidBody position={[0, -0.5, 0]} ref={j1} {...segmentProps}>
             <BallCollider args={[0.1]} />
           </RigidBody>
