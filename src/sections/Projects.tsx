@@ -1,7 +1,5 @@
 import AnimatedContent from '../components/AnimatedContent/AnimatedContent';
 import SpotlightCard from '../components/SpotlightCard/SpotlightCard';
-import DecryptedText from '../components/DecryptedText/DecryptedText';
-import ScrollFloat from '../components/ScrollFloat/ScrollFloat';
 
 interface Project {
   title: string;
@@ -76,8 +74,6 @@ const projects: Project[] = [
     icon: '◇'
   }
 ];
-
-const categories = ['All', 'UI/UX Design', 'UX Case Study', 'Branding'];
 
 export default function Projects() {
   return (
