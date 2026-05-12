@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 'use client';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, extend, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei';
 import {
@@ -15,53 +15,26 @@ import type { RigidBodyProps } from '@react-three/rapier';
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
 import * as THREE from 'three';
 
-// replace with your own imports, see the usage snippet for details
 import cardGLB from './card.glb';
 import lanyard from './lanyard.png';
 import cardImage from './Frame 2352.png';
 
-import './Lanyard.css';
-
-import { CARD_SUBSTRATE_HEX } from '../components/Lanyard/Lanyard';
-
 extend({ MeshLineGeometry, MeshLineMaterial });
-
-declare module '@react-three/fiber' {
-  interface ThreeElements {
-    meshLineGeometry: any;
-    meshLineMaterial: any;
-  }
-}
 
 interface LanyardProps {
   position?: [number, number, number];
   gravity?: [number, number, number];
   fov?: number;
   transparent?: boolean;
-  sceneBackground?: string;
-  subjectZoom?: number;
 }
 
 export default function Lanyard({
   position = [0, 0, 30],
   gravity = [0, -40, 0],
   fov = 20,
-  transparent = true,
-  sceneBackground,
-  subjectZoom = 1
+  transparent = true
 }: LanyardProps) {
   const [isMobile, setIsMobile] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
-
-  const useSceneFill = typeof sceneBackground === 'string' && sceneBackground.trim() !== '';
-  const glTransparent = useSceneFill ? false : transparent;
-
-  const cameraConfig = useMemo(() => {
-    const zoom = Math.max(0.75, Math.min(subjectZoom, 2.75));
-    return {
-      position: [position[0], position[1], position[2] / zoom] as [number, number, number],
-      fov,
-    };
-  }, [position, fov, subjectZoom]);
 
   useEffect(() => {
     const handleResize = (): void => setIsMobile(window.innerWidth < 768);
@@ -70,35 +43,18 @@ export default function Lanyard({
   }, []);
 
   return (
-    <div className="lanyard-wrapper">
+    <div className="relative z-0 w-full h-screen flex justify-center items-center transform scale-100 origin-center">
       <Canvas
-        camera={cameraConfig}
-        dpr={[2, isMobile ? 3.25 : 4]}
-        gl={{
-          alpha: glTransparent,
-          antialias: true,
-          powerPreference: 'high-performance',
-          stencil: false,
-        }}
-        onCreated={({ gl }) => {
-          gl.outputColorSpace = THREE.SRGBColorSpace;
-          gl.toneMapping = THREE.NoToneMapping;
-          gl.toneMappingExposure = 1;
-          if (useSceneFill) {
-            gl.setClearColor(new THREE.Color(sceneBackground!.trim()), 1);
-          } else if (transparent) {
-            gl.setClearColor(new THREE.Color(0x000000), 0);
-          } else {
-            gl.setClearColor(new THREE.Color(0x000000), 1);
-          }
-        }}
+        camera={{ position, fov }}
+        dpr={[1, isMobile ? 1.5 : 2]}
+        gl={{ alpha: transparent }}
+        onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
       >
-        {useSceneFill ? <color attach="background" args={[sceneBackground!.trim()]} /> : null}
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
           <Band isMobile={isMobile} />
         </Physics>
-        <Environment blur={0.75} environmentIntensity={0.55}>
+        <Environment blur={0.75}>
           <Lightformer
             intensity={2}
             color="white"
@@ -140,7 +96,6 @@ interface BandProps {
 }
 
 function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
-  // Using "any" for refs since the exact types depend on Rapier's internals
   const band = useRef<any>(null);
   const fixed = useRef<any>(null);
   const j1 = useRef<any>(null);
@@ -167,68 +122,12 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
 
   const { gl } = useThree();
 
-  useLayoutEffect(() => {
-    const maxAniso = Math.min(16, gl.capabilities.getMaxAnisotropy());
+  useEffect(() => {
     cardTexture.colorSpace = THREE.SRGBColorSpace;
     cardTexture.flipY = false;
-    cardTexture.generateMipmaps = true;
-    cardTexture.minFilter = THREE.LinearMipmapLinearFilter;
-    cardTexture.magFilter = THREE.LinearFilter;
-    cardTexture.anisotropy = maxAniso;
-    cardTexture.wrapS = THREE.ClampToEdgeWrapping;
-    cardTexture.wrapT = THREE.ClampToEdgeWrapping;
+    cardTexture.anisotropy = Math.min(16, gl.capabilities.getMaxAnisotropy());
     cardTexture.needsUpdate = true;
-  }, [gl, cardTexture]);
-
-  useLayoutEffect(() => {
-    const maxAniso = Math.min(16, gl.capabilities.getMaxAnisotropy());
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.generateMipmaps = true;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.anisotropy = maxAniso;
-    texture.needsUpdate = true;
-  }, [gl, texture]);
-
-  const cardBackMaterial = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color(CARD_SUBSTRATE_HEX),
-        polygonOffset: true,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1,
-      }),
-    []
-  );
-
-  const cardSurfaceMaterial = useMemo(() => {
-    const raw = nodes.card.material as THREE.Material | THREE.Material[];
-    const base = Array.isArray(raw) ? raw[0] : raw;
-    const m = base.clone() as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial;
-    m.map = cardTexture;
-    m.color.set(0xffffff);
-    if ('envMapIntensity' in m) {
-      (m as THREE.MeshStandardMaterial).envMapIntensity = 0.62;
-    }
-    m.transparent = false;
-    m.alphaTest = 0.42;
-    m.depthWrite = true;
-    if (isMobile && 'clearcoat' in m && typeof (m as THREE.MeshPhysicalMaterial).clearcoat === 'number') {
-      (m as THREE.MeshPhysicalMaterial).clearcoat = 0;
-    }
-    m.needsUpdate = true;
-    return m;
-  }, [nodes.card, cardTexture, isMobile]);
-
-  useEffect(() => {
-    const mat = cardSurfaceMaterial;
-    return () => mat.dispose();
-  }, [cardSurfaceMaterial]);
-
-  useEffect(() => {
-    const m = cardBackMaterial;
-    return () => m.dispose();
-  }, [cardBackMaterial]);
+  }, [cardTexture, gl]);
 
   const [curve] = useState(
     () =>
@@ -267,15 +166,16 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
       });
     }
     if (fixed.current) {
-      [j1, j2].forEach(ref => {
+      // Fix for buggy rope: consistent lerping and delta clamping
+      [j1, j2, j3].forEach(ref => {
         if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
         const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
         ref.current.lerped.lerp(
           ref.current.translation(),
-          delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
+          Math.min(1, delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
         );
       });
-      curve.points[0].copy(j3.current.translation());
+      curve.points[0].copy(j3.current.lerped);
       curve.points[1].copy(j2.current.lerped);
       curve.points[2].copy(j1.current.lerped);
       curve.points[3].copy(fixed.current.translation());
@@ -287,25 +187,27 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
   });
 
   curve.curveType = 'chordal';
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 
   return (
     <>
       <group position={[0, 4, 0]}>
         <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
-        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        {/* Vertical initialization to fix gravity snaps */}
+        <RigidBody position={[0, -0.5, 0]} ref={j1} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={[0, -1, 0]} ref={j2} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={[0, -1.5, 0]} ref={j3} {...segmentProps}>
           <BallCollider args={[0.1]} />
         </RigidBody>
         <RigidBody
-          position={[2, 0, 0]}
+          position={[0, -2.95, 0]}
           ref={card}
           {...segmentProps}
-          type={dragged ? ('kinematicPosition' as RigidBodyProps['type']) : ('dynamic' as RigidBodyProps['type'])}
+          type={dragged ? 'kinematicPosition' : 'dynamic'}
         >
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
           <group
@@ -322,8 +224,16 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
               drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
             }}
           >
-            <mesh geometry={nodes.card.geometry} material={cardBackMaterial} position={[0, 0, -0.016]} renderOrder={-1} />
-            <mesh geometry={nodes.card.geometry} material={cardSurfaceMaterial} />
+            <mesh geometry={nodes.card.geometry}>
+              <meshPhysicalMaterial
+                map={cardTexture}
+                map-anisotropy={16}
+                clearcoat={isMobile ? 0 : 1}
+                clearcoatRoughness={0.15}
+                roughness={0.9}
+                metalness={0.8}
+              />
+            </mesh>
             <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
             <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
           </group>
@@ -334,7 +244,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
         <meshLineMaterial
           color="white"
           depthTest={false}
-          resolution={isMobile ? [2200, 2200] : [3200, 3200]}
+          resolution={isMobile ? [1000, 2000] : [1000, 1000]}
           useMap
           map={texture}
           repeat={[-4, 1]}

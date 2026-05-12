@@ -38,40 +38,16 @@ function SyncCameraFromProps({ position, fov }: { position: [number, number, num
   return null;
 }
 
-/** Card substrate behind decal — design file matte #292929 */
 export const CARD_SUBSTRATE_HEX = '#292929';
-
-/**
- * CSS aspect ratio (width÷height) matching `card` mesh POSITION bounds in exported GLB
- * (accessor min/max: ΔX/ΔY ≈ 0.716418). Keeps WebGL buffer aspect aligned with Blender viewport.
- */
-export const LANYARD_VIEWPORT_WH_NUM = 358209;
-export const LANYARD_VIEWPORT_WH_DEN = 500000;
-
-const DEFAULT_RIG_POSITION: [number, number, number] = [0, 0, 0];
 
 interface LanyardProps {
   position?: [number, number, number];
   gravity?: [number, number, number];
   fov?: number;
-  /** When false, clears to opaque black. Ignored when `sceneBackground` is set. */
   transparent?: boolean;
-  /**
-   * Solid fill behind the 3D content (THREE scene background).
-   * When set, the GL context uses `alpha: false` — CSS on the wrapper/canvas won't replace this.
-   */
   sceneBackground?: string;
-  /**
-   * Moves the perspective camera closer on Z so the badge reads larger in the SAME canvas box.
-   * Does not resize the DOM or the About grid — only the 3D framing. Typical ~1.2–1.45 for a bolder card.
-   */
   subjectZoom?: number;
-  /**
-   * Listen for pointers on this element instead of blocking the fullscreen canvas overlay.
-   * Raycasting uses the WebGL canvas bounds + client coords so the badge can overlap HTML underneath.
-   */
   eventSource?: RefObject<HTMLElement>;
-  /** World-space offset for rope + badge + lanyard line (easiest way to shift X/Y vs the camera). */
   rigPosition?: [number, number, number];
 }
 
@@ -83,14 +59,13 @@ export default function Lanyard({
   sceneBackground,
   subjectZoom = 1,
   eventSource,
-  rigPosition = DEFAULT_RIG_POSITION
+  rigPosition = [0, 0, 0]
 }: LanyardProps) {
   const [isMobile, setIsMobile] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth < 768);
 
   const useSceneFill = typeof sceneBackground === 'string' && sceneBackground.trim() !== '';
   const glTransparent = useSceneFill ? false : transparent;
 
-  // Depends on xyz scalars, not `position` by reference, so edits to x/y/z (including same-array mutation) refresh the camera.
   const cameraConfig = useMemo(() => {
     const zoom = Math.max(0.75, Math.min(subjectZoom, 2.75));
     return {
@@ -106,7 +81,7 @@ export default function Lanyard({
   }, []);
 
   return (
-    <div className="lanyard-wrapper">
+    <div className="lanyard-wrapper relative z-0 w-full h-screen flex justify-center items-center">
       <Canvas
         camera={cameraConfig}
         dpr={[2, isMobile ? 3.25 : 4]}
@@ -151,34 +126,10 @@ export default function Lanyard({
           <Band isMobile={isMobile} rigPosition={rigPosition} />
         </Physics>
         <Environment blur={0.75} environmentIntensity={0.55}>
-          <Lightformer
-            intensity={2}
-            color="white"
-            position={[0, -1, 5]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={3}
-            color="white"
-            position={[-1, -1, 1]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={3}
-            color="white"
-            position={[1, 1, 1]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={10}
-            color="white"
-            position={[-10, 0, 14]}
-            rotation={[0, Math.PI / 2, Math.PI / 3]}
-            scale={[100, 10, 1]}
-          />
+          <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={3} color="white" position={[-1, -1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={3} color="white" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+          <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
         </Environment>
       </Canvas>
     </div>
@@ -192,18 +143,12 @@ interface BandProps {
   rigPosition?: [number, number, number];
 }
 
-function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = DEFAULT_RIG_POSITION }: BandProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = [0, 0, 0] }: BandProps) {
   const band = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fixed = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const j1 = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const j2 = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const j3 = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const card = useRef<any>(null);
 
   const vec = new THREE.Vector3();
@@ -211,7 +156,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = DEF
   const rot = new THREE.Vector3();
   const dir = new THREE.Vector3();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const segmentProps: any = {
     type: 'dynamic' as RigidBodyProps['type'],
     canSleep: true,
@@ -220,7 +164,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = DEF
     linearDamping: 4
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { nodes, materials } = useGLTF(cardGLB) as any;
   const texture = useTexture(lanyard);
   const cardTexture = useTexture(cardImage);
@@ -228,67 +171,11 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = DEF
   const { gl } = useThree();
 
   useLayoutEffect(() => {
-    const maxAniso = Math.min(16, gl.capabilities.getMaxAnisotropy());
     cardTexture.colorSpace = THREE.SRGBColorSpace;
     cardTexture.flipY = false;
-    cardTexture.generateMipmaps = true;
-    cardTexture.minFilter = THREE.LinearMipmapLinearFilter;
-    cardTexture.magFilter = THREE.LinearFilter;
-    cardTexture.anisotropy = maxAniso;
-    cardTexture.wrapS = THREE.ClampToEdgeWrapping;
-    cardTexture.wrapT = THREE.ClampToEdgeWrapping;
+    cardTexture.anisotropy = Math.min(16, gl.capabilities.getMaxAnisotropy());
     cardTexture.needsUpdate = true;
-  }, [gl, cardTexture]);
-
-  useLayoutEffect(() => {
-    const maxAniso = Math.min(16, gl.capabilities.getMaxAnisotropy());
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.generateMipmaps = true;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.anisotropy = maxAniso;
-    texture.needsUpdate = true;
-  }, [gl, texture]);
-
-  const cardBackMaterial = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color(CARD_SUBSTRATE_HEX),
-        polygonOffset: true,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1,
-      }),
-    []
-  );
-
-  const cardSurfaceMaterial = useMemo(() => {
-    const raw = nodes.card.material as THREE.Material | THREE.Material[];
-    const base = Array.isArray(raw) ? raw[0] : raw;
-    const m = base.clone() as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial;
-    m.map = cardTexture;
-    m.color.set(0xffffff);
-    if ('envMapIntensity' in m) {
-      (m as THREE.MeshStandardMaterial).envMapIntensity = 0.62;
-    }
-    m.transparent = false;
-    m.alphaTest = 0.42;
-    m.depthWrite = true;
-    if (isMobile && 'clearcoat' in m && typeof (m as THREE.MeshPhysicalMaterial).clearcoat === 'number') {
-      (m as THREE.MeshPhysicalMaterial).clearcoat = 0;
-    }
-    m.needsUpdate = true;
-    return m;
-  }, [nodes.card, cardTexture, isMobile]);
-
-  useEffect(() => {
-    const mat = cardSurfaceMaterial;
-    return () => mat.dispose();
-  }, [cardSurfaceMaterial]);
-
-  useEffect(() => {
-    const m = cardBackMaterial;
-    return () => m.dispose();
-  }, [cardBackMaterial]);
+  }, [cardTexture, gl]);
 
   const [curve] = useState(
     () =>
@@ -327,15 +214,16 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = DEF
       });
     }
     if (fixed.current) {
-      [j1, j2].forEach(ref => {
+      // Fix for buggy rope: consistent lerping and delta clamping
+      [j1, j2, j3].forEach(ref => {
         if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
         const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
         ref.current.lerped.lerp(
           ref.current.translation(),
-          delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
+          Math.min(1, delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
         );
       });
-      curve.points[0].copy(j3.current.translation());
+      curve.points[0].copy(j3.current.lerped);
       curve.points[1].copy(j2.current.lerped);
       curve.points[2].copy(j1.current.lerped);
       curve.points[3].copy(fixed.current.translation());
@@ -347,28 +235,28 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = DEF
   });
 
   curve.curveType = 'chordal';
-
-  const { width: canvasW, height: canvasH } = useThree((s) => s.size);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 
   return (
     <>
       <group position={rigPosition}>
         <group position={[0, 4, 0]}>
           <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
-          <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+          {/* Vertical initialization to fix gravity snaps */}
+          <RigidBody position={[0, -0.5, 0]} ref={j1} {...segmentProps}>
             <BallCollider args={[0.1]} />
           </RigidBody>
-          <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+          <RigidBody position={[0, -1, 0]} ref={j2} {...segmentProps}>
             <BallCollider args={[0.1]} />
           </RigidBody>
-          <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+          <RigidBody position={[0, -1.5, 0]} ref={j3} {...segmentProps}>
             <BallCollider args={[0.1]} />
           </RigidBody>
           <RigidBody
-            position={[2, 0, 0]}
+            position={[0, -2.95, 0]}
             ref={card}
             {...segmentProps}
-            type={dragged ? ('kinematicPosition' as RigidBodyProps['type']) : ('dynamic' as RigidBodyProps['type'])}
+            type={dragged ? 'kinematicPosition' : 'dynamic'}
           >
             <CuboidCollider args={[0.8, 1.125, 0.01]} />
             <group
@@ -376,39 +264,41 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = DEF
               position={[0, -1.2, -0.05]}
               onPointerOver={() => hover(true)}
               onPointerOut={() => hover(false)}
-              onPointerUp={(e) => {
-                (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+              onPointerUp={(e: any) => {
+                e.target.releasePointerCapture(e.pointerId);
                 drag(false);
               }}
-              onPointerDown={(e) => {
-                (e.target as HTMLElement).setPointerCapture(e.pointerId);
+              onPointerDown={(e: any) => {
+                e.target.setPointerCapture(e.pointerId);
                 drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
               }}
             >
-              <mesh geometry={nodes.card.geometry} material={cardBackMaterial} position={[0, 0, -0.016]} renderOrder={-1} />
-              <mesh geometry={nodes.card.geometry} material={cardSurfaceMaterial} />
+              <mesh geometry={nodes.card.geometry}>
+                <meshPhysicalMaterial
+                  map={cardTexture}
+                  map-anisotropy={16}
+                  clearcoat={isMobile ? 0 : 1}
+                  clearcoatRoughness={0.15}
+                  roughness={0.9}
+                  metalness={0.8}
+                />
+              </mesh>
               <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
               <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
             </group>
           </RigidBody>
         </group>
       </group>
-      {/*
-        Band stays OUTSIDE rigPosition: curve points come from Rapier in world coords.
-        Nesting mesh under rigPosition doubled the transform and hid/off-screened the strap.
-      */}
       <mesh ref={band}>
         <meshLineGeometry />
         <meshLineMaterial
-          color="#c9d4e8"
+          color="white"
           depthTest={false}
-          transparent
-          opacity={1}
-          resolution={[canvasW || 512, canvasH || 512]}
+          resolution={isMobile ? [1000, 2000] : [1000, 1000]}
           useMap
           map={texture}
           repeat={[-4, 1]}
-          lineWidth={Math.max(isMobile ? 2.75 : 2.25, 1.75)}
+          lineWidth={1}
         />
       </mesh>
     </>
