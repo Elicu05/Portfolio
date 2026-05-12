@@ -23,6 +23,13 @@ import './Lanyard.css';
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
+declare module '@react-three/fiber' {
+  interface ThreeElements {
+    meshLineGeometry: any;
+    meshLineMaterial: any;
+  }
+}
+
 /** Ensures camera x/y/z + fov track props (Canvas `camera` alone can miss non-z updates). */
 function SyncCameraFromProps({ position, fov }: { position: [number, number, number]; fov: number }) {
   const camera = useThree((s) => s.camera);
