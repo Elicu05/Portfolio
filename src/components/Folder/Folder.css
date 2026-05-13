@@ -116,6 +116,14 @@
   height: 60%;
 }
 
+.folder-paper-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 .folder__front {
   position: absolute;
   z-index: 3;

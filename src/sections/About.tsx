@@ -2,18 +2,22 @@ import { useRef, type RefObject } from 'react';
 import AnimatedContent from '../components/AnimatedContent/AnimatedContent';
 import Lanyard from '../components/Lanyard/Lanyard';
 
+import figmaIcon from '../assets/Figma.png';
+import photoshopIcon from '../assets/Photoshop.png';
+import illustratorIcon from '../assets/Illustrator.png';
+import visualIcon from '../assets/Visual.png';
+
 const skills = [
-  { col1: 'UI / UX Design', col2: 'Design Systems' },
-  { col1: 'UX Research', col2: 'E-commerce Strategy' },
-  { col1: 'Branding & Identity', col2: '3D Rendering' }
+  { col1: 'UI / UX Design', col2: 'App Design' },
+  { col1: 'UX Research', col2: 'Design Systems' },
+  { col1: 'Product Design', col2: 'E-commerce Strategy' },
 ];
 
 const softwares = [
-  { name: 'Figma', abbr: 'Fg', bg: '#a259ff' },
-  { name: 'Photoshop', abbr: 'Ps', bg: '#31a8ff' },
-  { name: 'Illustrator', abbr: 'Ai', bg: '#ff9a00' },
-  { name: 'Notion', abbr: 'No', bg: '#151515' },
-  { name: 'VS Code', abbr: 'Vs', bg: '#007acc' }
+  { name: 'Figma', icon: figmaIcon },
+  { name: 'Photoshop', icon: photoshopIcon },
+  { name: 'Illustrator', icon: illustratorIcon },
+  { name: 'Visual', icon: visualIcon },
 ];
 
 /** Camera & placement for the About lanyard — edit values here. */
@@ -100,10 +104,10 @@ export default function About() {
           <AnimatedContent className="about-slot-experience" distance={40} duration={0.8} delay={0.25}>
             <h3 className="about-pill-heading">Experience</h3>
             <div className="about-experience">
-              <span className="exp-role-title">Mid UI/UX Designer (2021 – Present)</span>
+              <span className="exp-role-title">Mid UI/UX Designer (2022 – Present)</span>
               <ul className="exp-bullets">
-                <li>Led end-to-end design of functional prototypes for industrial clients, centralizing operational data into unified platforms.</li>
-                <li>Optimized e-commerce architectures and landing pages, improving conversion rates through high-fidelity redesigns.</li>
+                <li>Led end-to-end design of functional prototypes and digital products for industrial clients, centralizing operational data into unified platforms.</li>
+                <li>Optimized apps, e-commerce architectures and landing pages, improving conversion rates through high-fidelity redesigns.</li>
                 <li>Developed scalable Design Systems and component libraries in Figma to ensure visual consistency.</li>
               </ul>
             </div>
@@ -112,7 +116,7 @@ export default function About() {
 
         {/* Right column — Education, fields, softwares */}
         <div className="about-col-right">
-          <AnimatedContent distance={40} duration={0.8} delay={0.1}>
+          <AnimatedContent className="about-dots-slot" distance={40} duration={0.8} delay={0.1}>
             <div className="about-dots">
               <span className="about-dot" style={{ background: 'var(--blue-600)' }} />
               <span className="about-dot" style={{ background: 'var(--blue-400)' }} />
@@ -125,14 +129,14 @@ export default function About() {
             <div className="about-education">
               <div className="edu-entry">
                 <span className="edu-title">Bachelor Degree</span>
-                <span className="edu-meta">Universidad Icesi &nbsp;|&nbsp; 2021 – Present</span>
+                <span className="edu-meta">Universidad Icesi &nbsp;|&nbsp; 2022 – Present</span>
                 <span className="edu-detail">Faculty: Design and Engineering</span>
-                <span className="edu-detail">Major: Interactive Media / UI·UX</span>
+                <span className="edu-detail">Major: Interactive Design / UI·UX</span>
               </div>
               <div className="edu-entry">
                 <span className="edu-title">Specialized Training</span>
-                <span className="edu-meta">Meta Pixel · Design Thinking &nbsp;|&nbsp; 2024</span>
-                <span className="edu-detail">Digital marketing configuration &amp; UX methodology workshops</span>
+                <span className="edu-meta">Spcrum · Design Thinking &nbsp;|&nbsp; 2024</span>
+                <span className="edu-detail">UX methodology workshops &amp; Digital marketing configuration</span>
               </div>
             </div>
           </AnimatedContent>
@@ -142,8 +146,18 @@ export default function About() {
             <div className="about-fields">
               {skills.map((pair, i) => (
                 <div className="fields-row" key={i}>
-                  <span className="field-item">✦ {pair.col1}</span>
-                  <span className="field-item">✦ {pair.col2}</span>
+                  <span className="field-item">
+                    <span className="about-list-mark" aria-hidden>
+                      ✦
+                    </span>{' '}
+                    {pair.col1}
+                  </span>
+                  <span className="field-item">
+                    <span className="about-list-mark" aria-hidden>
+                      ✦
+                    </span>{' '}
+                    {pair.col2}
+                  </span>
                 </div>
               ))}
             </div>
@@ -154,8 +168,8 @@ export default function About() {
               <h3 className="about-pill-heading">Softwares</h3>
               <div className="software-badges">
                 {softwares.map((sw) => (
-                  <span className="sw-badge" key={sw.name} style={{ backgroundColor: sw.bg }} title={sw.name}>
-                    {sw.abbr}
+                  <span className="sw-badge" key={sw.name} title={sw.name}>
+                    <img className="sw-icon" src={sw.icon} alt={sw.name} loading="lazy" />
                   </span>
                 ))}
               </div>

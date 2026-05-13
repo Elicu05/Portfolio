@@ -38,7 +38,7 @@ function SyncCameraFromProps({ position, fov }: { position: [number, number, num
   return null;
 }
 
-export const CARD_SUBSTRATE_HEX = '#292929';
+export const CARD_SUBSTRATE_HEX = '#9549D1';
 
 interface LanyardProps {
   position?: [number, number, number];
@@ -177,6 +177,21 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = [0,
     cardTexture.needsUpdate = true;
   }, [cardTexture, gl]);
 
+  const cardBackMaterial = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(CARD_SUBSTRATE_HEX),
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
+      }),
+    []
+  );
+
+  useEffect(() => {
+    return () => cardBackMaterial.dispose();
+  }, [cardBackMaterial]);
+
   const [curve] = useState(
     () =>
       new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()])
@@ -271,6 +286,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = [0,
                 drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
               }}
             >
+              <mesh geometry={nodes.card.geometry} material={cardBackMaterial} position={[0, 0, -0.016]} renderOrder={-1} />
               <mesh geometry={nodes.card.geometry}>
                 <meshPhysicalMaterial
                   map={cardTexture}
@@ -290,12 +306,9 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, rigPosition = [0,
       <mesh ref={band}>
         <meshLineGeometry />
         <meshLineMaterial
-          color="white"
+          color="#020102"
           depthTest={false}
           resolution={isMobile ? [1000, 2000] : [1000, 1000]}
-          useMap
-          map={texture}
-          repeat={[-4, 1]}
           lineWidth={1}
         />
       </mesh>

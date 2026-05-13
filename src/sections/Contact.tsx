@@ -25,8 +25,8 @@ export default function Contact() {
 
             <p className="contact-subtext">
               I'm always excited to take on new challenges and bring
-              creative visions to life. Whether it's a full design system,
-              an e-commerce redesign, or a fresh brand identity — let's talk.
+              creative visions to life. Whether it's a full design system, bringing a product idea to reality,
+              an e-commerce redesign, or a fresh brand identity. let's talk!
             </p>
 
             <div className="contact-links">

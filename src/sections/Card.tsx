@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, extend, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei';
 import {
@@ -20,6 +20,8 @@ import lanyard from './lanyard.png';
 import cardImage from './Frame 2352.png';
 
 extend({ MeshLineGeometry, MeshLineMaterial });
+
+const CARD_SUBSTRATE_HEX = '#9549D1';
 
 interface LanyardProps {
   position?: [number, number, number];
@@ -129,6 +131,21 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
     cardTexture.needsUpdate = true;
   }, [cardTexture, gl]);
 
+  const cardBackMaterial = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(CARD_SUBSTRATE_HEX),
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
+      }),
+    []
+  );
+
+  useEffect(() => {
+    return () => cardBackMaterial.dispose();
+  }, [cardBackMaterial]);
+
   const [curve] = useState(
     () =>
       new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()])
@@ -222,6 +239,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
               drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
             }}
           >
+            <mesh geometry={nodes.card.geometry} material={cardBackMaterial} position={[0, 0, -0.016]} renderOrder={-1} />
             <mesh geometry={nodes.card.geometry}>
               <meshPhysicalMaterial
                 map={cardTexture}
@@ -240,12 +258,9 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }: BandProps) {
       <mesh ref={band}>
         <meshLineGeometry />
         <meshLineMaterial
-          color="white"
+          color="#020102"
           depthTest={false}
           resolution={isMobile ? [1000, 2000] : [1000, 1000]}
-          useMap
-          map={texture}
-          repeat={[-4, 1]}
           lineWidth={1}
         />
       </mesh>

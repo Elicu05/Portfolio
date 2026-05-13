@@ -387,12 +387,13 @@
   }
   
   .about-grid {
+    --about-mark-gradient: linear-gradient(90deg, #8b5cfa 0%, #5b96fe 50%);
     position: relative;
     isolation: isolate;
     display: grid;
     /* Reference: ~25% lanyard / ~40% story / ~35% sidebar */
-    grid-template-columns: minmax(208px, 0.92fr) minmax(268px, 1.52fr) minmax(220px, 1.26fr);
-    gap: clamp(12px, 1.6vw, 22px) clamp(18px, 2.8vw, 40px);
+    grid-template-columns: minmax(196px, 0.78fr) minmax(268px, 1.62fr) minmax(220px, 1.22fr);
+    gap: clamp(12px, 1.6vw, 22px) clamp(6px, 1.15vw, 16px);
     align-items: start;
     align-content: start;
     width: 100%;
@@ -434,24 +435,24 @@
   .about-col-lanyard {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-end;
     gap: 0;
     min-width: 0;
     --lc-h: min(520px, 68vh);
   }
   
-  /* Reserves footprint for overlay; centered in narrow column while contact stays reference-left */
+  /* Hug the center column: centered spacer left empty space toward About me */
   .lanyard-layout-spacer {
     flex-shrink: 0;
-    align-self: center;
+    align-self: flex-end;
     width: min(460px, 100%, calc(var(--lc-h) * 358209 / 500000));
     height: var(--lc-h);
   }
   
   /* AnimatedContent wrapper is the flex item after the spacer — margin must live here */
   .about-contact-slot {
-    align-self: stretch;
-    width: 100%;
+    align-self: flex-end;
+    width: min(460px, 100%);
     max-width: min(460px, 100%);
     margin-top: clamp(-72px, -11vh, -36px);
   }
@@ -462,7 +463,7 @@
     gap: clamp(8px, 1.25vw, 12px);
     padding-top: 0;
     width: 100%;
-    max-width: min(460px, 100%);
+    max-width: 100%;
     align-self: flex-start;
   }
   
@@ -550,7 +551,7 @@
     font-weight: 400;
     line-height: 1.2;
     letter-spacing: -0.55px;
-    background: linear-gradient(90deg, #8B5CFA 0%, #5B96FE 50%);
+    background: var(--about-mark-gradient);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -558,7 +559,7 @@
     border-radius: 100px;
     padding: 5px 18px;
     display: inline-block;
-    margin: 0 0 12px;
+    margin: 0 0 clamp(16px, 2.2vw, 24px);
   }
   
   /* ── Experience (no panel — text only, reference layout) ── */
@@ -589,7 +590,7 @@
   
   .exp-bullets li {
     position: relative;
-    padding-left: 14px;
+    padding-left: 1.05rem;
     font-size: 0.8125rem;
     color: rgba(27, 28, 29, 1);
     font-weight: 300;
@@ -598,13 +599,32 @@
   }
   
   .exp-bullets li::before {
-    content: '•';
+    content: '✦';
     position: absolute;
     left: 0;
-    top: 0;
-    color: var(--blue-500);
-    font-size: 0.85rem;
-    line-height: 1.45;
+    top: 0.12em;
+    font-size: 0.8rem;
+    line-height: 1;
+    font-weight: 400;
+    background: var(--about-mark-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  
+  /* Same glyph + size as experience bullets; gradient matches pill headings */
+  .about-list-mark {
+    display: inline;
+    font-size: 0.8rem;
+    line-height: 1;
+    font-weight: 400;
+    vertical-align: 0.04em;
+    background: var(--about-mark-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
   }
   
   /* ── Right Column — Education, Fields, Softwares ── */
@@ -616,25 +636,45 @@
     min-width: 0;
   }
   
+  /* Extra air between center column and sidebar (gap applies equally between all columns) */
+  @media (min-width: 1025px) {
+    .about-col-right {
+      margin-inline-start: clamp(12px, 2vw, 26px);
+    }
+  }
+  
   /* Extra space between Education — Creative fields — Softwares (flex gap + margin) */
   .about-slot-right-spaced {
     margin-top: clamp(12px, 2vw, 24px);
   }
   
+  /* Avoid flex stretch + subpixel rounding squashing circles */
+  .about-dots-slot {
+    overflow: visible;
+  }
+  
   .about-dots {
     display: flex;
+    align-items: center;
     gap: 7px;
     justify-content: flex-end;
     align-self: flex-end;
     width: 100%;
-    margin: 0 0 2px;
+    margin: 0;
+    line-height: 0;
   }
   
   .about-dot {
-    width: 7px;
-    height: 7px;
+    box-sizing: border-box;
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    min-height: 8px;
+    flex-shrink: 0;
+    aspect-ratio: 1;
     border-radius: 50%;
     display: block;
+    transform: translateZ(0);
   }
   
   .about-education {
@@ -726,7 +766,7 @@
   
   .softwares-card .about-pill-heading {
     margin-top: 0;
-    margin-bottom: 12px;
+    margin-bottom: clamp(16px, 2.2vw, 24px);
   }
   
   /* ── Software Badges ── */
@@ -744,16 +784,20 @@
     justify-content: center;
     width: 34px;
     height: 34px;
-    border-radius: 6px;
-    color: #fff;
-    font-family: var(--font-display);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
     cursor: default;
     transition: transform 0.25s var(--ease-out-expo);
   }
   
+  .sw-icon {
+    width: 34px;
+    height: 34px;
+    display: block;
+    object-fit: contain;
+  }
+
   .sw-badge:hover {
     transform: translateY(-3px) scale(1.08);
   }
@@ -942,8 +986,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 60px;
-    padding: 200px 0;
+    gap: 48px;
+    padding: 140px 0 28px;
     background: transparent;
     user-select: none;
   }
@@ -967,7 +1011,7 @@
      ═══════════════════════════════════════════════ */
   
   .projects-section {
-    padding: 120px 0;
+    padding: 28px 0 100px;
     background: transparent;
     position: relative;
   }
@@ -1006,6 +1050,18 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 24px;
+  }
+
+  .project-card-anchor {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 20px;
+  }
+
+  .project-card-anchor:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.6);
+    outline-offset: 6px;
   }
   
   .project-card {
@@ -1262,7 +1318,7 @@
   @media (max-width: 1024px) {
     .about-grid {
       grid-template-columns: minmax(0, min(360px, 100%)) minmax(0, 1fr);
-      gap: clamp(14px, 2.5vw, 22px) clamp(18px, 3vw, 32px);
+      gap: clamp(14px, 2.5vw, 22px) clamp(6px, 1.5vw, 18px);
     }
     .about-col-right {
       grid-column: 1 / -1;
@@ -1287,16 +1343,20 @@
     .about-col-lanyard {
       order: -1;
       --lc-h: min(320px, 42vh);
+      align-items: center;
     }
     .lanyard-layout-spacer {
       width: min(100%, calc(var(--lc-h) * 358209 / 500000));
       max-width: 100%;
       margin-inline: auto;
+      align-self: center;
     }
   
     .about-contact-slot {
       margin-top: clamp(-32px, -7vh, -14px);
       max-width: 100%;
+      align-self: stretch;
+      width: 100%;
     }
   
     .featured-banner {

@@ -24,7 +24,7 @@ function App() {
         <About />
         <div className="featured-banner">
           <span className="featured-banner-text">Featured         </span>
-          <Folder size={2} />
+          <Folder />
           <span className="featured-banner-text">projects</span>
         </div>
         <Projects />

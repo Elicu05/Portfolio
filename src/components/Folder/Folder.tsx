@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
 import './Folder.css';
+import vibraImg from '../../assets/Vibra Vé UX Case Study.png';
+import kooliImg from '../../assets/Kooli UI UX Case Study.png';
+import boostingImg from '../../assets/Boosting motivation UX Case Study.png';
+
+const DEFAULT_ITEMS: React.ReactNode[] = [
+  <img className="folder-paper-image" src={vibraImg} alt="Vibra Ve project preview" loading="lazy" />,
+  <img className="folder-paper-image" src={boostingImg} alt="Boosting motivation project preview" loading="lazy" />,
+  <img className="folder-paper-image" src={kooliImg} alt="Kooli project preview" loading="lazy" />,
+];
 
 interface FolderProps {
   /** Optional override for the folder shell (back, tab, both flaps). Default matches the cyan-blue gradient. */
@@ -27,7 +36,12 @@ const darkenColor = (hex: string, percent: number): string => {
   return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
 };
 
-const Folder: React.FC<FolderProps> = ({ surface, size = 2, items = [], className = '' }) => {
+const Folder: React.FC<FolderProps> = ({
+  surface,
+  size = 1.35,
+  items = DEFAULT_ITEMS,
+  className = '',
+}) => {
   const maxItems = 3;
   const papers = items.slice(0, maxItems);
   while (papers.length < maxItems) {
